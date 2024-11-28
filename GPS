@@ -1,101 +1,118 @@
-#include <lpc214x.h> //microcontroller-specic header le
-#include "sub0.c" //UART0 initialization and functions
-#include "sub1.c" //UART1 initialization and functions
-// Main function
-int main()
-{
-unsigned char temp; // Variable to store data read from UART1
-// Initialize UART0 for communication
-UART0Init();
-// Initialize UART1 for communication
-UART1Init();
-// Innite loop to continuously check and transfer data
-while (1)
-{
-// Read a character from UART1
-temp = UART1_get_char1();
-// Send the read character to UART0
-UART0_put_char0(temp);
-}
-// The program will never reach this point due to the innite loop
-return 0;
-}
-UART0.c
 #include <lpc214x.h>
-void delay0(unsigned int time)
+
+unsigned char lat_msg[] = "\nLatitude= ";
+unsigned char long_msg[] = "\nLongitude= ";
+unsigned char rcv_byte, count;
+unsigned char rcv_array[30];
+
+void UART0Init(void)
 {
-unsigned int i, j;
-for (i = 0; i < time; i++)
-for (j = 0; j < 274; j++);
+    PINSEL0 |= 0x00000005;
+    U0FCR = 0x07;
+    U0LCR = 0x83;
+    U0DLL = 0x62;
+    U0DLM = 0x00;
+    U0LCR = 0x03;
 }
-void UART0Init()
+
+void UART1Init(void)
 {
-PINSEL0 |= 0x00000005;
-U0LCR = 0x83; //Line Control Register
-U0DLL = 0x62;
-U0DLM = 0x00;
-U0LCR = 0x03;
-U0FCR = 0x07; //Field Control Register
+    PINSEL0 |= 0x00050000;
+    U1FCR = 0x07;
+    U1LCR = 0x83;
+    U1DLL = 0x62;
+    U1DLM = 0x00;
+    U1LCR = 0x03;
 }
-void UART0_put_char0(unsigned char ch)
+
+unsigned char UART1_PutChar(unsigned char ch)
 {
-if (ch == '\n')
+    if (ch == '\n')
+    {
+        while (!(U1LSR & 0x20));
+        U1THR = 0x0D;
+    }
+    while (!(U1LSR & 0x20));
+    return (U1THR = ch);
+}
+
+unsigned char UART1_GetChar(void)
 {
-while (!(U0LSR & 0x20));
-U0THR = 0x0D;
+    while (!(U1LSR & 0x01));
+    return (U1RBR);
 }
-while (!(U0LSR & 0x20)); //LSR - Line Status Register
-U0THR = ch;
-}
-void UART0_put_str0(unsigned char *str)
+
+unsigned char UART0_PutChar(unsigned char ch)
 {
-while (*str != '\0')
+    if (ch == '\n')
+    {
+        while (!(U0LSR & 0x20));
+        U0THR = 0x0D;
+    }
+    while (!(U0LSR & 0x20));
+    return (U0THR = ch);
+}
+
+void UART0_Puts(unsigned char *str)
 {
-UART0_put_char0(*str++);
+    while (*str)
+    {
+        UART0_PutChar(*str++);
+    }
 }
-}
-unsigned char UART0_get_char0(void)
+
+int main(void)
 {
-while (!(U0LSR & 0x01));
-return U0RBR; //RBR = Reciever Buffer Register
+    UART0Init();
+    UART1Init();
+
+    while (1)
+    {
+        while (rcv_byte != '$')
+        {
+            rcv_byte = UART1_GetChar();
+        }
+
+        rcv_byte = UART1_GetChar();
+        rcv_byte = UART1_GetChar();
+        rcv_byte = UART1_GetChar();
+
+        if (rcv_byte == 'R')
+        {
+            for (count = 0; count < 15; count++)
+            {
+                rcv_byte = UART1_GetChar();
+            }
+
+            rcv_byte = UART1_GetChar();
+
+            if (rcv_byte == 'V')
+            {
+                UART0_Puts("\nInvalid GPS string\n");
+            }
+            else
+            {
+                for (count = 0; count < 24; count++)
+                {
+                    rcv_byte = UART1_GetChar();
+                    rcv_array[count] = rcv_byte;
+                }
+
+                UART0_Puts(lat_msg);
+                for (count = 0; count < 11; count++)
+                {
+                    UART0_PutChar(rcv_array[count]);
+                }
+
+                UART0_Puts(long_msg);
+                for (count = 12; count < 24; count++)
+                {
+                    UART0_PutChar(rcv_array[count]);
+                }
+            }
+        }
+    }
 }
-UART1.c
-#include <lpc214x.h>
-void delay(unsigned int time)
-{
-unsigned int i, j;
-for (i = 0; i < time; i++)
-for (j = 0; j < 274; j++);
-}
-void UART1Init()
-{
-PINSEL0 |= 0x00050000;
-U1LCR = 0x83;
-U1DLL = 0x62;
-U1DLM = 0x00;
-U1LCR = 0x03;
-U1FCR = 0x07;
-}
-void UART1_put_char1(unsigned char ch)
-{
-if (ch == '\n')
-{
-while (!(U1LSR & 0x20));
-U1THR = 0x0D;
-}
-while (!(U1LSR & 0x20));
-U1THR = ch;
-}
-void UART1_put_str1(unsigned char *str)
-{
-while (*str != '\0')
-{
-UART1_put_char1(*str++);
-}
-}
-unsigned char UART1_get_char1(void)
-{
-while (!(U1LSR & 0x01));
-return U1RBR;
-}
+
+
 
