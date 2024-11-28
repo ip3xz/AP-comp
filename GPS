@@ -1,0 +1,103 @@
+Main.c
+#include <lpc214x.h> //microcontroller-specic header le
+#include "sub0.c" //UART0 initialization and functions
+#include "sub1.c" //UART1 initialization and functions
+// Main function
+int main()
+{
+unsigned char temp; // Variable to store data read from UART1
+// Initialize UART0 for communication
+UART0Init();
+// Initialize UART1 for communication
+UART1Init();
+// Innite loop to continuously check and transfer data
+while (1)
+{
+// Read a character from UART1
+temp = UART1_get_char1();
+// Send the read character to UART0
+UART0_put_char0(temp);
+}
+// The program will never reach this point due to the innite loop
+return 0;
+}
+--------------
+UART0.c
+#include <lpc214x.h>
+void delay0(unsigned int time)
+{
+unsigned int i, j;
+for (i = 0; i < time; i++)
+for (j = 0; j < 274; j++);
+}
+void UART0Init()
+{
+PINSEL0 |= 0x00000005;
+U0LCR = 0x83; //Line Control Register
+U0DLL = 0x62;
+U0DLM = 0x00;
+U0LCR = 0x03;
+U0FCR = 0x07; //Field Control Register
+}
+void UART0_put_char0(unsigned char ch)
+{
+if (ch == '\n')
+{
+while (!(U0LSR & 0x20));
+U0THR = 0x0D;
+}
+while (!(U0LSR & 0x20)); //LSR - Line Status Register
+U0THR = ch;
+}
+void UART0_put_str0(unsigned char *str)
+{
+while (*str != '\0')
+{
+UART0_put_char0(*str++);
+}
+}
+unsigned char UART0_get_char0(void)
+{
+while (!(U0LSR & 0x01));
+return U0RBR; //RBR = Reciever Buffer Register
+}
+-----------------
+UART1.c
+#include <lpc214x.h>
+void delay(unsigned int time)
+{
+unsigned int i, j;
+for (i = 0; i < time; i++)
+for (j = 0; j < 274; j++);
+}
+void UART1Init()
+{
+PINSEL0 |= 0x00050000;
+U1LCR = 0x83;
+U1DLL = 0x62;
+U1DLM = 0x00;
+U1LCR = 0x03;
+U1FCR = 0x07;
+}
+void UART1_put_char1(unsigned char ch)
+{
+if (ch == '\n')
+{
+while (!(U1LSR & 0x20));
+U1THR = 0x0D;
+}
+while (!(U1LSR & 0x20));
+U1THR = ch;
+}
+void UART1_put_str1(unsigned char *str)
+{
+while (*str != '\0')
+{
+UART1_put_char1(*str++);
+}
+}
+unsigned char UART1_get_char1(void)
+{
+while (!(U1LSR & 0x01));
+return U1RBR;
+}
