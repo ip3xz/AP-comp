@@ -1,0 +1,98 @@
+'+' on left
+#include "lpc214x.h"
+#define LCD_PORT 0x00FF0000
+#define EN (1 << 31)
+#define RS (1 << 27)
+#define CS1 (1 << 26)
+#define CS2 (1 << 25)
+#define GRST (1 << 30)
+#define RW (1 << 24)
+#define LCD_SHIFT 16
+
+void delay(unsigned int time) {
+    int i, j;
+    for (i = 0; i < time; i++)
+        for (j = 0; j < 10; j++);
+}
+
+void ldelay(unsigned int time) {
+    int i, j;
+    for (i = 0; i < time; i++)
+        for (j = 0; j < 5000; j++);
+}
+
+void LCD_strobe(void) {
+    IO1SET = EN;
+    delay(5);
+    IO1CLR = EN;
+    delay(5);
+}
+
+void GLCD_data(unsigned char ch) {
+    IO1CLR = LCD_PORT;
+    IO1SET = ch << LCD_SHIFT;
+    IO1SET = RS;
+    LCD_strobe();
+}
+
+void GLCD_cmd(unsigned char ch) {
+    IO1CLR = LCD_PORT;
+    IO1SET = ch << LCD_SHIFT;
+    IO1CLR = RS;
+    LCD_strobe();
+}
+
+void GLCD_Init() {
+    int i;
+    PINSEL0 = 0;
+    PINSEL1 = 0;
+    PINSEL2 = 0;
+    IODIR1 = LCD_PORT | RS | EN | CS1 | CS2 | GRST | RW;
+    IOSET1 = GRST | CS1 | CS2;
+    IOCLR1 = RW | RS | EN;
+    for (i = 0; i < 10; i++)
+        GLCD_cmd(0x3F);
+    GLCD_cmd(0x40);
+    GLCD_cmd(0xB8);
+}
+
+void GLCD_disp(unsigned char *temp1) {
+    int page, col;
+    for (page = 0; page < 8; page++) {
+        IO1SET = CS1;
+        IO1CLR = CS2;
+        GLCD_cmd(0xB8 | page);
+        GLCD_cmd(0x40);
+        for (col = 0; col < 64; col++) {
+            GLCD_data(temp1[(page * 128) + col]);
+        }
+        IO1CLR = CS1;
+        IO1SET = CS2;
+        GLCD_cmd(0xB8 | page);
+        GLCD_cmd(0x40);
+        for (col = 64; col < 128; col++) {
+            GLCD_data(temp1[(page * 128) + col]);
+        }
+    }
+}
+
+int main() {
+    GLCD_Init();
+    int i, j, l, m;
+    for (i = 1; i < 7; i++) {
+        IO1SET = CS1;
+        IO1CLR = CS2;
+        GLCD_cmd(0xB8 | i);
+        for (j = 29; j < 43; j++) {
+            GLCD_cmd(0x40 | j);
+            GLCD_data(0x00);
+        }
+    }
+    for (l = 3; l < 5; l++) {
+        GLCD_cmd(0xB8 | l);
+        for (m = 10; m < 61; m++) {
+            GLCD_cmd(0x40 | m);
+            GLCD_data(0x00);
+        }
+    }
+}
