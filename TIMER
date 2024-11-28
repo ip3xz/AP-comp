@@ -1,0 +1,22 @@
+#include <lpc214x.h>
+void ms_delay(unsigned int milliseconde)
+{
+T0PR = 15000; // Prescale value (adjust this based on the actual clock frequency)
+T0TC = 0; // Clear the timer counter
+T0TCR = 0x01; // Enable the timer
+while (T0TC < milliseconde); // Wait for the specified delay
+T0TCR = 0x00; // Disable the timer
+}
+int main()
+{
+// Set P0.12 to P0.19 as output (0x000ff000)
+IODIR0 = 0x000ff000;
+while (1)
+{
+IOSET0 = 0x000ff000; // Set the output to high (turn on LEDs)
+ms_delay(1000); // Delay for 1000 ms (1 second)
+// Turn off the LEDs
+IOCLR0 = 0x000ff000; // Set the output to low (turn off LEDs)
+ms_delay(1000); // Delay for 1000 ms (1 second)
+}
+}
