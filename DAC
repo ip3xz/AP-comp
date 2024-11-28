@@ -1,0 +1,111 @@
+square- 
+#include <lpc214x.h>
+
+void delay()
+{
+    unsigned int j;
+    for(j=0;j<10000;j++);
+}
+
+void dac_init()
+{
+    PINSEL1 |= 1<<19;
+    DACR |= 1<<16;
+}
+
+int main()
+{
+    int i;
+    dac_init();
+    while(1)
+    {
+        DACR = 0x000000;
+        delay();
+        DACR = 0x000FF000;
+        delay();
+    }
+}
+------------------------------------------------
+2.Triangular Wave
+#include <lpc214x.h> // Include the LPC214x header file for hardware access.
+void delay()
+{
+unsigned int j;
+for(j=0;j<10000;j++); // Simple delay function, loops 10000 times for a delay.
+}
+void dac_init()
+{
+PINSEL1 |= 1<<19 ;
+DACR |= 1<<16; }
+int main()
+{
+int i ;
+dac_init();
+while(1)
+{
+for(i=0 ; i<1024 ; i++)
+{
+DACR = (i<<6);
+}
+for(i=1024 ; i>0 ; i--)
+{
+DACR =(i<<6);
+}
+}
+}
+-----------------------------
+3.Sawtooth Wave
+#include <lpc214x.h> // Include the LPC214x header file for hardware access.
+#define value 0x3FF
+void delay()
+{
+unsigned int j;
+for(j=0;j<10000;j++); // Simple delay function, loops 10000 times for a delay.
+}
+void dac_init()
+{
+PINSEL1 |= 1<<19 ;
+DACR |= 1<<16; }
+int main()
+{
+int i ;
+dac_init();
+while(1)
+{
+DACR = value<<6;
+for(i=1022 ; i>0 ; i--)
+{
+DACR = i<<6;
+}
+}}--------------------------
+4.Staircase Wave
+#include <lpc214x.h> // Include the LPC214x header file for hardware access.
+void delay()
+{
+unsigned int j;
+for(j=0;j<10000;j++); // Simple delay function, loops 10000 times for a delay.
+}
+void dac_init()
+{
+PINSEL1 |= 1<<19 ;
+DACR |= 1<<16; }
+int main()
+{
+int i ;
+dac_init();
+while(1)
+{
+for(i=0 ; i<8 ; i++)
+{
+DACR = (i*128<<6);
+delay(20);
+}
+for(i=6 ; i>0 ; i--)
+{
+DACR = (i*128<<6);
+delay(20);
+}
+}
+}
+=================
+
