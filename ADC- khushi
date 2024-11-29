@@ -1,0 +1,55 @@
+#include <lpc214x.h>
+#include "UART0.c"
+
+void delay(unsigned int time)
+{
+	int i,j;
+	for(i=0;i<time;i++)
+	{
+		for(j=0;j<1000;j++);
+	}
+}
+
+void ADCinit(void)
+{
+	PINSEL1=0x01000000;
+	AD0CR=0x00200302;
+}
+
+int main(void)
+{
+	unsigned int adc_data;
+	unsigned char adc_ascii[3],i,number;
+	unsigned char text[] = "ADC Value(Hex) = ";
+
+		UART0_INIT();
+		ADCinit();
+	
+	while(1)
+	{
+		AD0CR=0x01200302;
+		while((AD0DR1&0x80000000)!=0x80000000);
+		UART0_string_tx(text);
+		adc_data=(AD0DR1&0x0000FFC0)>>6; 
+		delay(10);
+		adc_ascii[2]=(adc_data&0x0000000F);
+		adc_ascii[1]=(adc_data&0x000000F0)>>4;
+		adc_ascii[0]=(adc_data&0x00000F00)>>8;
+		
+		for(i=0;i<3;i++)
+		{
+			if((0 <= adc_ascii[i] && adc_ascii[i] <=9))
+			{
+				number  = adc_ascii[i] + 0x30;
+			}
+			if((0xA <= adc_ascii[i] && adc_ascii[i] <=0xF))
+			{
+				number  = adc_ascii[i] + 0x37;
+			}
+			
+			UART0_byte_tx(number);
+		}
+		
+		UART0_string_tx(" \r");
+	}
+}
