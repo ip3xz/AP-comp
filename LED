@@ -1,0 +1,24 @@
+PROGRAM:
+#include <LPC214x.h>
+void delay(unsigned int count)
+{
+unsigned int j=0,i=0;
+for(j=0;j<count;j++)
+for(i=0;i<500;i++);
+}
+int main()
+{
+PINSEL0=0x00000000;
+IODIR0=0x000FF000;
+while(1)
+{
+IOSET0=0x00000000;
+delay(1000);
+IOCLR0=0x00000000;
+delay(1000);
+IOSET0=0x000ff000;
+delay(1000);
+IOCLR0=0x000ff000;
+delay(1000);
+}
+}
