@@ -22,6 +22,42 @@ int main() {
 
     return 0;
 }
+---------------------------------------------------------
+UART0-
+void UART0Init()
+{
+PINSEL0 = 0x00000005;
+U0FCR=0x07;
+U0LCR= 0X83;
+U0DLL=0X62;
+U0DLM=0X00;
+U0LCR=0X03;
+}
+
+unsigned char UART0_PutChar(unsigned char ch)
+{
+if(ch == '\n')
+{
+while(!(U0LSR&0x20));
+U0THR = 0x0D;
+}
+while(!(U0LSR&0x20));
+return(U0THR = ch);
+}
+unsigned char UART0_GetChar(void)
+{
+while(!(U0LSR&0x01));
+return(U0RBR);
+}
+void UART0_Puts(unsigned char *str)
+{
+while(1)
+{
+if(*str == '\0')
+break ;
+UART0_PutChar(*str++);
+}
+}
 ---------------------------------------------------
 2. Transmit and Receive String:
 #include <lpc214x.h>
